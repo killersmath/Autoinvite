@@ -2,6 +2,7 @@ AutoInvite = AceLibrary("AceAddon-2.0"):new("AceConsole-2.0", "AceEvent-2.0", "A
 
 local Player;
 
+-- Default Settings
 local defaults = {
   Active = true,
   Keyword = "invite",
@@ -11,6 +12,7 @@ local defaults = {
   Restriction = true
 }
 
+-- command options /ai (AceConsole-2)
 local options  = {
   type = "group",
   handler = AutoInvite,
@@ -92,6 +94,7 @@ local options  = {
   },
 }
 
+-- Messages Array
 local messages = {
   Invite = "AutoInvite: Invite has been sent to %s.",
   Not_in_Whitelist = "AutoInvite: Can't invite %s, it is not in the Whitelist.",
@@ -101,6 +104,7 @@ local messages = {
   Not_RL_Assist = "AutoInvite: Can't invite %s right now, i'm not raid leader/assistant.",
 }
 
+-- Called when the addon is initialized
 function AutoInvite:OnInitialize()
   Player = UnitName("player");
 
@@ -114,6 +118,7 @@ function AutoInvite:OnInitialize()
   self:RegisterChatCommand({"/autoinvite", "/ai"}, options)
 end
 
+-- Whisper messages handler (msg, player, ...)
 function AutoInvite:CHAT_MSG_WHISPER() 
   if(self.db.profile.Active) then
     if(self.db.profile.Channel == 1) then
@@ -124,6 +129,7 @@ function AutoInvite:CHAT_MSG_WHISPER()
   end
 end
 
+-- Guild Chat messages handler (msg, player, ...)
 function AutoInvite:CHAT_MSG_GUILD() 
   if(self.db.profile.Active) then
     if(self.db.profile.Channel == 2 or self.db.profile.Channel == 4) then
@@ -134,6 +140,7 @@ function AutoInvite:CHAT_MSG_GUILD()
   end
 end
 
+-- Officer Chat messages handler (msg, player, ...)
 function AutoInvite:CHAT_MSG_OFFICER() 
   if(self.db.profile.Active) then
     if(self.db.profile.Channel == 3 or self.db.profile.Channel == 4) then
@@ -144,6 +151,7 @@ function AutoInvite:CHAT_MSG_OFFICER()
   end
 end
 
+-- Main Function resposable to check if the current message is valid
 function AutoInvite:ProcessMessage(who, what)
   if(self:HasTheKeyword(what)) then 
     if(self:IsWhiteListMode()) then
@@ -156,6 +164,8 @@ function AutoInvite:ProcessMessage(who, what)
   end
 end
 
+-- Invite the player to the group depending of group type
+-- Throw a message to the player about the current situation of the invitation
 function AutoInvite:ThrowInvite(who)
 	local numgroup;
   local gtype = self.db.profile.Type;
@@ -202,15 +212,35 @@ function AutoInvite:ThrowInvite(who)
   end
 end
 
+-- Keyword comparator
 function AutoInvite:HasTheKeyword(what)
   return (what) == (self.db.profile.Keyword);
   --return string.find(string.lower(what), AutoInviteOptions[Realm][Player]["Invite"], 1, true);
 end
 
+-- 
 function AutoInvite:IsWhiteListMode()
   return self.db.profile.Whitelist;
 end
 
+-- Interface to send whisper messages
+function AutoInvite:SendWhisper(to, message) 
+  SendChatMessage(message, "WHISPER", "Common", to);
+end
+
+-- Check if a speciic player is inside of white list array
+function AutoInvite:CheckInWhiteList(nickname)
+  for j = 1, 50 do
+    if(WhiteList_Players[j]) then
+      if(WhiteList_Players[j] == nickname) then
+        return true;
+      end
+    end
+  end
+  return false
+end
+
+-- Helper to check out if it's possible to invite other players
 function AutoInvite:CanInvite()
   local numgroup;
   local gtype = self.db.profile.Type;
@@ -232,21 +262,8 @@ function AutoInvite:CanInvite()
   return false;
 end
 
-function AutoInvite:SendWhisper(to, message) 
-  SendChatMessage(message, "WHISPER", "Common", to);
-end
 
-function AutoInvite:CheckInWhiteList(nickname)
-  for j = 1, 50 do
-    if(WhiteList_Players[j]) then
-      if(WhiteList_Players[j] == nickname) then
-        return true;
-      end
-    end
-  end
-  return false
-end
-
+-- Throw a invite to the all players in the Whitelist
 function AutoInvite:InviteWhiteList()
   for j = 1, 50 do
     if(self:CanInvite()) then
