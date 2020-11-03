@@ -53,13 +53,13 @@ local options  = {
     Channel =
     {
       name = "Channel",
-      desc = "1 = Whisper, 2 = Guild, 3 = Officer, 4 = Guild / Officer",
+      desc = "1 = Whisper, 2 = Guild, 3 = Officer, 4 = Guild / Officer, 5 = All",
       type = "range",
       get  = function () return AutoInvite.db.profile.Channel end,
       set  = function (newType) AutoInvite.db.profile.Channel = newType end,
       disabled = function() return not AutoInvite.db.profile.Active end,
       min = 1,
-      max = 4,
+      max = 5,
       step = 1,
       order = 4,
     },
@@ -83,14 +83,15 @@ local options  = {
       disabled = function() return not AutoInvite.db.profile.Active end,
       order = 6,
     },
-    AList = {
-			order = 3,
-			name = "AList", 
-			type = "execute",
-			desc = "Invite all players from whitelist",
+    AList = 
+	{
+	  order = 3,
+	  name = "AList", 
+	  type = "execute",
+	  desc = "Invite all players from whitelist",
       func = function() AutoInvite:InviteWhiteList() end,
       disabled = function() return not AutoInvite.db.profile.Active end,
-		},
+	},
   },
 }
 
@@ -121,7 +122,7 @@ end
 -- Whisper messages handler (msg, player, ...)
 function AutoInvite:CHAT_MSG_WHISPER() 
   if(self.db.profile.Active) then
-    if(self.db.profile.Channel == 1) then
+    if(self.db.profile.Channel == 1 or self.db.profile.Channel == 5) then
       local who = arg2;
       local what = arg1;
       if(who ~= Player) then self:ProcessMessage(who, what) end;
@@ -132,7 +133,7 @@ end
 -- Guild Chat messages handler (msg, player, ...)
 function AutoInvite:CHAT_MSG_GUILD() 
   if(self.db.profile.Active) then
-    if(self.db.profile.Channel == 2 or self.db.profile.Channel == 4) then
+    if(self.db.profile.Channel == 2 or self.db.profile.Channel == 4 or self.db.profile.Channel == 5) then
       local who = arg2;
       local what = arg1;
       if(who ~= Player) then self:ProcessMessage(who, what) end;
@@ -143,7 +144,7 @@ end
 -- Officer Chat messages handler (msg, player, ...)
 function AutoInvite:CHAT_MSG_OFFICER() 
   if(self.db.profile.Active) then
-    if(self.db.profile.Channel == 3 or self.db.profile.Channel == 4) then
+    if(self.db.profile.Channel == 3 or self.db.profile.Channel == 4 or self.db.profile.Channel == 5) then
       local who = arg2;
       local what = arg1;
       if(who ~= Player) then self:ProcessMessage(who, what) end;
