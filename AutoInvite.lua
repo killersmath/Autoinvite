@@ -9,7 +9,8 @@ local defaults = {
   Type = "PARTY",
   Channel = 1,
   Whitelist = false,
-  Restriction = true
+  Restriction = true,
+  Sensitive = true,
 }
 
 -- command options /ai (AceConsole-2)
@@ -75,7 +76,7 @@ local options  = {
     },
     Restriction =
     {
-      name = "Rescrition",
+      name = "Restriction",
       desc = "Activate/Disable Officer Whitelist restriction",
       type = "toggle",
       get  = function () return AutoInvite.db.profile.Restriction end,
@@ -84,14 +85,24 @@ local options  = {
       order = 6,
     },
     AList = 
-	{
-	  order = 3,
-	  name = "AList", 
-	  type = "execute",
-	  desc = "Invite all players from whitelist",
-      func = function() AutoInvite:InviteWhiteList() end,
+    {
+      order = 3,
+      name = "AList", 
+      type = "execute",
+      desc = "Invite all players from whitelist",
+        func = function() AutoInvite:InviteWhiteList() end,
+        disabled = function() return not AutoInvite.db.profile.Active end,
+    },
+    Case =
+    {
+      name = "Sensitive Keyword Check",
+      desc = "Activate/Disable the Sensitive Case Check.",
+      type = "toggle",
+      get  = function () return AutoInvite.db.profile.Sensitive end,
+      set  = function (newStatus) AutoInvite.db.profile.Sensitive = newStatus end,
       disabled = function() return not AutoInvite.db.profile.Active end,
-	},
+      order = 7,
+    },
   },
 }
 
@@ -215,8 +226,11 @@ end
 
 -- Keyword comparator
 function AutoInvite:HasTheKeyword(what)
-  return (what) == (self.db.profile.Keyword);
-  --return string.find(string.lower(what), AutoInviteOptions[Realm][Player]["Invite"], 1, true);
+  if(AutoInvite.db.profile.Sensitive) then
+    return (what) == (self.db.profile.Keyword);
+  else
+    return string.lower(what) == string.lower(self.db.profile.Keyword)
+  end
 end
 
 -- 
