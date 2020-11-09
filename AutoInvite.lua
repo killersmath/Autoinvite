@@ -1,5 +1,6 @@
 AutoInvite = AceLibrary("AceAddon-2.0"):new("AceConsole-2.0", "AceEvent-2.0", "AceHook-2.1" ,  "AceDB-2.0")
 
+local GlobalTimer = 0
 local Player;
 
 -- Default Settings
@@ -88,10 +89,17 @@ local options  = {
     {
       name = "AList", 
       desc = "Invite all players from whitelist",
-	  type = "execute",
-	  func = function() AutoInvite:InviteWhiteList() end,
-	  disabled = function() return not AutoInvite.db.profile.Active end,
-	  order = 7,
+      type = "execute",
+      func = function() AutoInvite:InviteWhiteList() end,
+      disabled = function() return not AutoInvite.db.profile.Active end,
+      order = 7,
+    },
+    tester =
+    {
+      name = "Tester",
+      desc = "LALA",
+      type = "execute",
+      func = function () AutoInvite:Tester() end, 
     },
     case =
     {
@@ -116,6 +124,16 @@ local messages = {
   Not_RL_Assist = "AutoInvite: Can't invite %s right now, i'm not raid leader/assistant.",
 }
 
+function AutoInvite:Tester()
+  local currentTime = time()
+  if(currentTime >= (GlobalTimer + 5)) then
+    self:Print("Got it")
+    GlobalTimer = currentTime
+  else
+    self:Print("Error")
+  end
+end
+
 -- Called when the addon is initialized
 function AutoInvite:OnInitialize()
   Player = UnitName("player");
@@ -128,6 +146,8 @@ function AutoInvite:OnInitialize()
   self:RegisterDefaults("profile", defaults )
 
   self:RegisterChatCommand({"/autoinvite", "/ai"}, options)
+
+  self:Print("Addon loaded. use |cff00FF00/ai|r to configure.")
 end
 
 -- Whisper messages handler (msg, player, ...)
@@ -228,8 +248,8 @@ end
 -- @param msg recieved keyword
 -- @return if the msg is equal to the addon keyword
 function AutoInvite:HasTheKeyword(msg)
-  if(self.db.profile.Sensitive) then return msg == self.db.profile.Keyword
-  else return string.lower(msg) == string.lower(self.db.profile.Keyword)
+  if(self.db.profile.Sensitive) then return msg == self.db.profile.Keyword;
+  else return string.lower(msg) == string.lower(self.db.profile.Keyword);
   end
 end
 
@@ -284,6 +304,14 @@ end
 
 -- Throw a invite to the all players in the Whitelist
 function AutoInvite:InviteWhiteList()
+  local currentTime = time()
+  if(currentTime >= (GlobalTimer + 5)) then
+    self:Print("Sending the invites to all players of white list...")
+    GlobalTimer = currentTime
+  else
+    return self:Print("You only can use this feature again after 5s.")
+  end
+
   for j = 1, 50 do
     if(self:CanInvite()) then
       if (WhiteList_Players[j]) then
