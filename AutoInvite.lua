@@ -5,12 +5,12 @@ local Player;
 -- Default Settings
 local defaults = {
   Active = true,
-  Keyword = "invite",
-  Type = "PARTY",
-  Channel = 1,
-  Whitelist = false,
-  Restriction = true,
-  Sensitive = true,
+  Keyword = "invite", -- initial keyword
+  Type = "PARTY", -- initial group mode
+  Channel = 1, -- initial channel type
+  Whitelist = false, -- initial whitelist mode
+  Restriction = true, -- initial restriction
+  Sensitive = true, -- initial case sensitive mode
 }
 
 -- command options /ai (AceConsole-2)
@@ -19,7 +19,7 @@ local options  = {
   handler = AutoInvite,
   args =
   {
-    Active =
+    active =
     {
       name = "Active",
       desc = "Activate/Suspend 'Auto Invite'",
@@ -28,7 +28,7 @@ local options  = {
       set  = function (newStatus) AutoInvite.db.profile.Active = newStatus end,
       order = 1,
     },
-    Keyword =
+    keyword =
     {
       name = "Keyword",
       desc = "Invite Keyword",
@@ -39,7 +39,7 @@ local options  = {
       disabled = function() return not AutoInvite.db.profile.Active end,
       order = 2,
     },
-    Type = 
+    type = 
     {
       name = "Type",
       desc = "Party / Raid",
@@ -51,7 +51,7 @@ local options  = {
       order = 3,
       validate = {["PARTY"]=PARTY,["RAID"]=RAID},
     },
-    Channel =
+    channel =
     {
       name = "Channel",
       desc = "1 = Whisper, 2 = Guild, 3 = Officer, 4 = Guild / Officer, 5 = All",
@@ -64,7 +64,7 @@ local options  = {
       step = 1,
       order = 4,
     },
-    Whitelist =
+    whitelist =
     {
       name = "Whitelist",
       desc = "Activate/Disable Whitelist Mode",
@@ -74,26 +74,26 @@ local options  = {
       disabled = function() return not AutoInvite.db.profile.Active end,
       order = 5,
     },
-    Restriction =
+    restriction =
     {
       name = "Restriction",
       desc = "Activate/Disable Officer Whitelist restriction",
       type = "toggle",
       get  = function () return AutoInvite.db.profile.Restriction end,
       set  = function (newRestriction) AutoInvite.db.profile.Restriction = newRestriction end,
-      disabled = function() return not AutoInvite.db.profile.Active end,
+      disabled = function() return (not AutoInvite.db.profile.Active) or (not AutoInvite.db.profile.Whitelist) end,
       order = 6,
     },
-    AList = 
+    alist = 
     {
-      order = 3,
       name = "AList", 
-      type = "execute",
       desc = "Invite all players from whitelist",
-        func = function() AutoInvite:InviteWhiteList() end,
-        disabled = function() return not AutoInvite.db.profile.Active end,
+	  type = "execute",
+	  func = function() AutoInvite:InviteWhiteList() end,
+	  disabled = function() return not AutoInvite.db.profile.Active end,
+	  order = 7,
     },
-    Case =
+    case =
     {
       name = "Sensitive Keyword Check",
       desc = "Activate/Disable the Sensitive Case Check.",
@@ -101,7 +101,7 @@ local options  = {
       get  = function () return AutoInvite.db.profile.Sensitive end,
       set  = function (newStatus) AutoInvite.db.profile.Sensitive = newStatus end,
       disabled = function() return not AutoInvite.db.profile.Active end,
-      order = 7,
+      order = 8,
     },
   },
 }
@@ -225,11 +225,11 @@ function AutoInvite:ThrowInvite(who)
 end
 
 -- Keyword comparator
-function AutoInvite:HasTheKeyword(what)
-  if(AutoInvite.db.profile.Sensitive) then
-    return (what) == (self.db.profile.Keyword);
-  else
-    return string.lower(what) == string.lower(self.db.profile.Keyword)
+-- @param msg recieved keyword
+-- @return if the msg is equal to the addon keyword
+function AutoInvite:HasTheKeyword(msg)
+  if(self.db.profile.Sensitive) then return msg == self.db.profile.Keyword
+  else return msg:lower() == self.db.profile.Keyword:lower()
   end
 end
 
@@ -239,11 +239,15 @@ function AutoInvite:IsWhiteListMode()
 end
 
 -- Interface to send whisper messages
-function AutoInvite:SendWhisper(to, message) 
-  SendChatMessage(message, "WHISPER", "Common", to);
+-- @param to reciever nickname
+-- @param msg current msg sttring
+function AutoInvite:SendWhisper(to, msg) 
+  SendChatMessage(msg, "WHISPER", "Common", to);
 end
 
 -- Check if a speciic player is inside of white list array
+-- @param nickname current player nickname
+-- @return if nickname is in the white list
 function AutoInvite:CheckInWhiteList(nickname)
   for j = 1, 50 do
     if(WhiteList_Players[j]) then
