@@ -229,7 +229,7 @@ end
 -- @return if the msg is equal to the addon keyword
 function AutoInvite:HasTheKeyword(msg)
   if(self.db.profile.Sensitive) then return msg == self.db.profile.Keyword
-  else return msg:lower() == self.db.profile.Keyword:lower()
+  else return string.lower(msg) == string.lower(self.db.profile.Keyword)
   end
 end
 
