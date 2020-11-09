@@ -1,7 +1,7 @@
 AutoInvite = AceLibrary("AceAddon-2.0"):new("AceConsole-2.0", "AceEvent-2.0", "AceHook-2.1" ,  "AceDB-2.0")
 
 local GlobalTimer = 0
-local Player;
+local Player
 
 -- Default Settings
 local defaults = {
@@ -94,13 +94,6 @@ local options  = {
       disabled = function() return not AutoInvite.db.profile.Active end,
       order = 7,
     },
-    tester =
-    {
-      name = "Tester",
-      desc = "LALA",
-      type = "execute",
-      func = function () AutoInvite:Tester() end, 
-    },
     case =
     {
       name = "Sensitive Keyword Check",
@@ -136,11 +129,10 @@ end
 
 -- Called when the addon is initialized
 function AutoInvite:OnInitialize()
-  Player = UnitName("player");
-
-  self:RegisterEvent("CHAT_MSG_WHISPER");
-  self:RegisterEvent("CHAT_MSG_GUILD");
-  self:RegisterEvent("CHAT_MSG_OFFICER");
+  Player = UnitName("player")
+  self:RegisterEvent("CHAT_MSG_WHISPER")
+  self:RegisterEvent("CHAT_MSG_GUILD")
+  self:RegisterEvent("CHAT_MSG_OFFICER")
 
   self:RegisterDB("AutoInviteDB", "AutoInviteDBPC")
   self:RegisterDefaults("profile", defaults )
@@ -154,9 +146,9 @@ end
 function AutoInvite:CHAT_MSG_WHISPER() 
   if(self.db.profile.Active) then
     if(self.db.profile.Channel == 1 or self.db.profile.Channel == 5) then
-      local who = arg2;
-      local what = arg1;
-      if(who ~= Player) then self:ProcessMessage(who, what) end;
+      local who = arg2
+      local what = arg1
+      if(who ~= Player) then self:ProcessMessage(who, what) end
     end
   end
 end
@@ -165,9 +157,9 @@ end
 function AutoInvite:CHAT_MSG_GUILD() 
   if(self.db.profile.Active) then
     if(self.db.profile.Channel == 2 or self.db.profile.Channel == 4 or self.db.profile.Channel == 5) then
-      local who = arg2;
-      local what = arg1;
-      if(who ~= Player) then self:ProcessMessage(who, what) end;
+      local who = arg2
+      local what = arg1
+      if(who ~= Player) then self:ProcessMessage(who, what) end
     end
   end
 end
@@ -176,9 +168,9 @@ end
 function AutoInvite:CHAT_MSG_OFFICER() 
   if(self.db.profile.Active) then
     if(self.db.profile.Channel == 3 or self.db.profile.Channel == 4 or self.db.profile.Channel == 5) then
-      local who = arg2;
-      local what = arg1;
-      if(who ~= Player) then self:ProcessMessage(who, what) end;
+      local who = arg2
+      local what = arg1
+      if(who ~= Player) then self:ProcessMessage(who, what) end
     end
   end
 end
@@ -187,11 +179,11 @@ end
 function AutoInvite:ProcessMessage(who, what)
   if(self:HasTheKeyword(what)) then 
     if(self:IsWhiteListMode()) then
-      local found = self:CheckInWhiteList(who);
-      if(found) then self:ThrowInvite(who);
-      else self:SendWhisper(who, string.format(messages["Not_in_Whitelist"], who));
+      local found = self:CheckInWhiteList(who)
+      if(found) then self:ThrowInvite(who)
+      else self:SendWhisper(who, string.format(messages["Not_in_Whitelist"], who))
       end
-    else  self:ThrowInvite(who);
+    else  self:ThrowInvite(who)
     end
   end
 end
@@ -199,46 +191,46 @@ end
 -- Invite the player to the group depending of group type
 -- Throw a message to the player about the current situation of the invitation
 function AutoInvite:ThrowInvite(who)
-	local numgroup;
-  local gtype = self.db.profile.Type;
+	local numgroup
+  local gtype = self.db.profile.Type
   if(gtype == "PARTY") then
-    numgroup = GetNumPartyMembers();
+    numgroup = GetNumPartyMembers()
     if((IsPartyLeader() and numgroup < 4) or (numgroup == 0)) then 
-      InviteByName(who);
-      return self:SendWhisper(who, string.format(messages["Invite"], who));
+      InviteByName(who)
+      return self:SendWhisper(who, string.format(messages["Invite"], who))
     else 
-      if(numgroup >= 4) then return self:SendWhisper(who, string.format(messages["Party_Full"], who));
-      else return self:SendWhisper(who, string.format(messages["Not_Party_Leader"], who));
+      if(numgroup >= 4) then return self:SendWhisper(who, string.format(messages["Party_Full"], who))
+      else return self:SendWhisper(who, string.format(messages["Not_Party_Leader"], who))
       end
     end
   elseif(gtype == "RAID") then
-    numgroup = GetNumRaidMembers();
+    numgroup = GetNumRaidMembers()
     if(numgroup == 0) then --Not currently in a raid
-      numparty = GetNumPartyMembers();
+      numparty = GetNumPartyMembers()
       if(numparty == 0) then 
-        InviteByName(who); --Nobody in the party? Start a new one!
-        return self:SendWhisper(who, string.format(messages["Invite"], who));
+        InviteByName(who) --Nobody in the party? Start a new one!
+        return self:SendWhisper(who, string.format(messages["Invite"], who))
       elseif(numparty < 4) then
         if(IsPartyLeader()) then 
-          InviteByName(who); --4 or less party members? Invite if you can.
-          return self:SendWhisper(who, string.format(messages["Invite"], who));
-        else return self:SendWhisper(who, string.format(messages["Not_Party_Leader"], who));
+          InviteByName(who) --4 or less party members? Invite if you can.
+          return self:SendWhisper(who, string.format(messages["Invite"], who))
+        else return self:SendWhisper(who, string.format(messages["Not_Party_Leader"], who))
         end
       elseif(GetNumPartyMembers() == 4)then --if you've got a 5-man party (GetNumPartyMembers excludes yourself) convert to raid.
         if(IsPartyLeader()) then 
-          self:print("Raid mode enabled: Converting your group to a raid.");
-          ConvertToRaid();
-          InviteByName(who);
-          return self:SendWhisper(who, string.format(messages["Invite"], who));
-        else return self:SendWhisper(who, string.format(messages["Not_Party_Leader"], who));
+          self:print("Raid mode enabled: Converting your group to a raid.")
+          ConvertToRaid()
+          InviteByName(who)
+          return self:SendWhisper(who, string.format(messages["Invite"], who))
+        else return self:SendWhisper(who, string.format(messages["Not_Party_Leader"], who))
         end
       end
     elseif((IsRaidLeader() or IsRaidOfficer()) and numgroup < 40) then 
-      InviteByName(who);
-      return self:SendWhisper(who, string.format(messages["Invite"], who));
+      InviteByName(who)
+      return self:SendWhisper(who, string.format(messages["Invite"], who))
     else
-      if(numgroup > 39) then return self:SendWhisper(who, string.format(messages["Raid_Full"], who));
-      else return self:SendWhisper(who, string.format(messages["Not_RL_Assist"], who));
+      if(numgroup > 39) then return self:SendWhisper(who, string.format(messages["Raid_Full"], who))
+      else return self:SendWhisper(who, string.format(messages["Not_RL_Assist"], who))
       end
     end
   end
@@ -248,21 +240,21 @@ end
 -- @param msg recieved keyword
 -- @return if the msg is equal to the addon keyword
 function AutoInvite:HasTheKeyword(msg)
-  if(self.db.profile.Sensitive) then return msg == self.db.profile.Keyword;
-  else return string.lower(msg) == string.lower(self.db.profile.Keyword);
+  if(self.db.profile.Sensitive) then return msg == self.db.profile.Keyword
+  else return string.lower(msg) == string.lower(self.db.profile.Keyword)
   end
 end
 
 -- 
 function AutoInvite:IsWhiteListMode()
-  return self.db.profile.Whitelist;
+  return self.db.profile.Whitelist
 end
 
 -- Interface to send whisper messages
 -- @param to reciever nickname
 -- @param msg current msg sttring
 function AutoInvite:SendWhisper(to, msg) 
-  SendChatMessage(msg, "WHISPER", "Common", to);
+  SendChatMessage(msg, "WHISPER", "Common", to)
 end
 
 -- Check if a speciic player is inside of white list array
@@ -272,7 +264,7 @@ function AutoInvite:CheckInWhiteList(nickname)
   for j = 1, 50 do
     if(WhiteList_Players[j]) then
       if(WhiteList_Players[j] == nickname) then
-        return true;
+        return true
       end
     end
   end
@@ -281,24 +273,24 @@ end
 
 -- Helper to check out if it's possible to invite other players
 function AutoInvite:CanInvite()
-  local numgroup;
-  local gtype = self.db.profile.Type;
+  local numgroup
+  local gtype = self.db.profile.Type
   if(gtype == "PARTY") then
-    numgroup = GetNumPartyMembers();
-    if((IsPartyLeader() and numgroup < 4) or (numgroup == 0)) then return true;
+    numgroup = GetNumPartyMembers()
+    if((IsPartyLeader() and numgroup < 4) or (numgroup == 0)) then return true
     end
   elseif(gtype == "RAID") then
-    numgroup = GetNumRaidMembers();
+    numgroup = GetNumRaidMembers()
     if (numgroup == 0) then
-      numparty = GetNumPartyMembers();
-      if(numparty == 0) then return true;
-      else return IsPartyLeader();
+      numparty = GetNumPartyMembers()
+      if(numparty == 0) then return true
+      else return IsPartyLeader()
       end
     elseif(IsRaidLeader() or IsRaidOfficer() and (numgroup < 40)) then
-      return true;
+      return true
     end
   end
-  return false;
+  return false
 end
 
 
@@ -315,7 +307,7 @@ function AutoInvite:InviteWhiteList()
   for j = 1, 50 do
     if(self:CanInvite()) then
       if (WhiteList_Players[j]) then
-        self:ThrowInvite(WhiteList_Players[j]);
+        self:ThrowInvite(WhiteList_Players[j])
       end
     end
   end
