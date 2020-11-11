@@ -14,7 +14,7 @@ local defaults = {
   Sensitive = true, -- initial case sensitive mode
 }
 
--- command options /ai (AceConsole-2)
+-- Command Options /ai (AceConsole-2)
 local options  = {
   type = "group",
   handler = AutoInvite,
@@ -26,7 +26,7 @@ local options  = {
       desc = "Activate/Suspend 'Auto Invite'",
       type = "toggle",
       get  = function () return AutoInvite.db.profile.Active end,
-      set  = function (newStatus) AutoInvite.db.profile.Active = newStatus end,
+      set  = function (newStatus) AutoInvite:ActiveToggle(newStatus) end,
       order = 1,
     },
     keyword =
@@ -117,73 +117,68 @@ local messages = {
   Not_RL_Assist = "AutoInvite: Can't invite %s right now, i'm not raid leader/assistant.",
 }
 
-function AutoInvite:Tester()
-  local currentTime = time()
-  if(currentTime >= (GlobalTimer + 5)) then
-    self:Print("Got it")
-    GlobalTimer = currentTime
-  else
-    self:Print("Error")
-  end
-end
-
 -- Called when the addon is initialized
 function AutoInvite:OnInitialize()
-  Player = UnitName("player")
-  self:RegisterEvent("CHAT_MSG_WHISPER")
-  self:RegisterEvent("CHAT_MSG_GUILD")
-  self:RegisterEvent("CHAT_MSG_OFFICER")
-
   self:RegisterDB("AutoInviteDB", "AutoInviteDBPC")
   self:RegisterDefaults("profile", defaults )
 
   self:RegisterChatCommand({"/autoinvite", "/ai"}, options)
+  
+  if AutoInvite.db.profile.Active then
+    self:RegisterEvent("CHAT_MSG_WHISPER")
+    self:RegisterEvent("CHAT_MSG_GUILD")
+    self:RegisterEvent("CHAT_MSG_OFFICER")
+  end
 
   self:Print("Addon loaded. use |cff00FF00/ai|r to configure.")
 end
 
+-- Called then the user type /ai active
+function AutoInvite:ActiveToggle(actived)
+  if actived then
+    self:RegisterEvent("CHAT_MSG_WHISPER")
+    self:RegisterEvent("CHAT_MSG_GUILD")
+    self:RegisterEvent("CHAT_MSG_OFFICER")
+  else
+    self:UnregisterAllEvents()
+  end
+  
+  AutoInvite.db.profile.Active = actived
+end
+
 -- Whisper messages handler (msg, player, ...)
 function AutoInvite:CHAT_MSG_WHISPER() 
-  if(self.db.profile.Active) then
-    if(self.db.profile.Channel == 1 or self.db.profile.Channel == 5) then
-      local who = arg2
-      local what = arg1
-      if(who ~= Player) then self:ProcessMessage(who, what) end
-    end
+  if(self.db.profile.Channel == 1 or self.db.profile.Channel == 5) then
+    local who, what = arg2, arg1
+    if(who ~= Player) then self:ProcessMessage(who, what) end
   end
 end
 
 -- Guild Chat messages handler (msg, player, ...)
 function AutoInvite:CHAT_MSG_GUILD() 
-  if(self.db.profile.Active) then
-    if(self.db.profile.Channel == 2 or self.db.profile.Channel == 4 or self.db.profile.Channel == 5) then
-      local who = arg2
-      local what = arg1
-      if(who ~= Player) then self:ProcessMessage(who, what) end
-    end
+  if(self.db.profile.Channel == 2 or self.db.profile.Channel == 4 or self.db.profile.Channel == 5) then
+    local who, what = arg2, arg1
+    if(who ~= Player) then self:ProcessMessage(who, what) end
   end
 end
 
 -- Officer Chat messages handler (msg, player, ...)
 function AutoInvite:CHAT_MSG_OFFICER() 
-  if(self.db.profile.Active) then
-    if(self.db.profile.Channel == 3 or self.db.profile.Channel == 4 or self.db.profile.Channel == 5) then
-      local who = arg2
-      local what = arg1
-      if(who ~= Player) then self:ProcessMessage(who, what) end
-    end
+  if(self.db.profile.Channel == 3 or self.db.profile.Channel == 4 or self.db.profile.Channel == 5) then
+    local who, what = arg2, arg1
+    if(who ~= Player) then self:ProcessMessage(who, what) end
   end
 end
 
 -- Main Function resposable to check if the current message is valid
 function AutoInvite:ProcessMessage(who, what)
   if(self:HasTheKeyword(what)) then 
-    if(self:IsWhiteListMode()) then
+    if(self.db.profile.Whitelist) then
       local found = self:CheckInWhiteList(who)
       if(found) then self:ThrowInvite(who)
       else self:SendWhisper(who, string.format(messages["Not_in_Whitelist"], who))
       end
-    else  self:ThrowInvite(who)
+    else self:ThrowInvite(who)
     end
   end
 end
@@ -218,7 +213,7 @@ function AutoInvite:ThrowInvite(who)
         end
       elseif(GetNumPartyMembers() == 4)then --if you've got a 5-man party (GetNumPartyMembers excludes yourself) convert to raid.
         if(IsPartyLeader()) then 
-          self:print("Raid mode enabled: Converting your group to a raid.")
+          self:Print("Raid mode enabled: Converting your group to a raid.")
           ConvertToRaid()
           InviteByName(who)
           return self:SendWhisper(who, string.format(messages["Invite"], who))
@@ -245,11 +240,6 @@ function AutoInvite:HasTheKeyword(msg)
   end
 end
 
--- 
-function AutoInvite:IsWhiteListMode()
-  return self.db.profile.Whitelist
-end
-
 -- Interface to send whisper messages
 -- @param to reciever nickname
 -- @param msg current msg sttring
@@ -261,11 +251,9 @@ end
 -- @param nickname current player nickname
 -- @return if nickname is in the white list
 function AutoInvite:CheckInWhiteList(nickname)
-  for j = 1, 50 do
-    if(WhiteList_Players[j]) then
-      if(WhiteList_Players[j] == nickname) then
-        return true
-      end
+  for k, v in ipairs(WhiteList_Players) do
+    if(v == nickname) then
+      return true
     end
   end
   return false
@@ -304,10 +292,10 @@ function AutoInvite:InviteWhiteList()
     return self:Print("You only can use this feature again after 5s.")
   end
 
-  for j = 1, 50 do
+  for k, v in ipairs(WhiteList_Players) do
     if(self:CanInvite()) then
-      if (WhiteList_Players[j]) then
-        self:ThrowInvite(WhiteList_Players[j])
+      if(v) then
+        self:ThrowInvite(v)
       end
     end
   end
