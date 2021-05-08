@@ -1,7 +1,7 @@
 AutoInvite = AceLibrary("AceAddon-2.0"):new("AceConsole-2.0", "AceEvent-2.0", "AceHook-2.1" ,  "AceDB-2.0")
 
 local GlobalTimer = 0
-local Player
+local Player = UnitName("player")
 
 -- Default Settings
 local defaults = {
@@ -107,12 +107,12 @@ local options  = {
   },
 }
 
--- Messages Array
+-- Messages Map
 local messages = {
   Invite = "AutoInvite: Invite has been sent to %s.",
-  Not_in_Whitelist = "AutoInvite: Can't invite %s, it is not in the Whitelist.",
+  Not_in_Whitelist = "AutoInvite: Can't invite %s, it's not in the Whitelist.",
   Party_Full = "AutoInvite: Can't invite %s right now, party is full.",
-  Raid_Full = "AutoInvite: Can't invite %s right now, raid is full",
+  Raid_Full = "AutoInvite: Can't invite %s right now, raid is full.",
   Not_Party_Leader = "AutoInvite: Can't invite %s right now, i'm not party leader.",
   Not_RL_Assist = "AutoInvite: Can't invite %s right now, i'm not raid leader/assistant.",
 }
